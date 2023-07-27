@@ -1,0 +1,33 @@
+{
+  "name": "easypeers-signal",
+  "version": "0.0.1",
+  "description": "Easy signaling for connecting WebRTC peers",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha",
+    "start": "node server.js",
+    "serve": "node http-server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/draeder/easypeers-signal.git"
+  },
+  "keywords": [
+    "easypeers",
+    "easypeers-signal",
+    "p2p",
+    "decentralization"
+  ],
+  "author": "Daniel Raeder",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/draeder/easypeers-signal/issues"
+  },
+  "homepage": "https://github.com/draeder/easypeers-signal#readme",
+  "devDependencies": {
+    "chai": "^4.3.7",
+    "http-server": "^14.1.1",
+    "mocha": "^10.2.0",
+    "puppeteer": "^20.9.0"
+  }
+}
