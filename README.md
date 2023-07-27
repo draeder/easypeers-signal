@@ -23,7 +23,12 @@ npm i http-server -g
 ```
 
 ```
-http-server
+npm serve
+```
+
+#### Run tests
+```
+npm test
 ```
 
 ### Client
