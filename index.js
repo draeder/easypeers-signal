@@ -26,7 +26,6 @@ export function EasypeersSignal(opts) {
   let peerCount = 0
   let seenGossipIds = {}
   
-  
   async function init() {
     peerId = await generateRandomSHA1()
     if (opts && opts.debug) console.debug('Peer ID:', peerId)
