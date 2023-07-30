@@ -4,7 +4,7 @@
 :construction: Currently a work in progress! :construction:
 
 ## Install
-Clone this repo, then
+Clone this repo, then:
 
 ```
 npm install
@@ -17,20 +17,6 @@ npm install
 npm start
 ```
 
-#### Start an http server to serve the client
-```
-npm i http-server -g
-```
-
-```
-npm serve
-```
-
-#### Run tests
-```
-npm test
-```
-
 ### Client
 Browse to [http://localhost:8000](http://localhost:8000) in multiple tabs
 
@@ -38,10 +24,10 @@ From developer tools,
 
 Send broadcast messages with:
 ```js
-broadcastMessage("your message")
+es.send("your message")
 ```
 
 Send direct messages with:
 ```js
-sendMessageTo("<peer address>", "your message")
+es.send("<peer address>", "your message")
 ```

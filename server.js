@@ -1,9 +1,34 @@
 const http = require('http');
 const WebSocket = require('ws');
+const fs = require('fs');
+const path = require('path');
 
 let clients = {};
 
-const server = http.createServer((req, res) => {});
+const server = http.createServer((req, res) => {
+  // Determine the file to serve based on the URL
+  let filePath = '.' + req.url;
+  if (filePath == './')
+    filePath = './index.html';
+
+  let extname = String(path.extname(filePath)).toLowerCase();
+  let mimeTypes = {
+    '.html': 'text/html',
+    '.js': 'text/javascript',
+  };
+
+  let contentType = mimeTypes[extname] || 'application/octet-stream';
+
+  fs.readFile(filePath, function(error, content) {
+    if (error) {
+      res.writeHead(500);
+      res.end('Sorry, there was an error loading the requested file.', 'utf-8');
+    } else {
+      res.writeHead(200, { 'Content-Type': contentType });
+      res.end(content, 'utf-8');
+    }
+  });
+});
 
 const wss = new WebSocket.Server({ server });
 

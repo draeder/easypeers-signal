@@ -1,5 +1,19 @@
 <!DOCTYPE html>
 <html>
 <body>
-    <script src="index.js"></script>
+    <script type="module">
+        import { EasypeersSignal } from "./index.js"
+        let opts = {
+            maxPeers: 6,
+            iceConfig: { 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }] },
+            // Low-level configuration options
+            _GOSSIP_LIFETIME: 60 * 1000,
+
+        }
+        const es = new EasypeersSignal()
+        es.on('message', (message) => {
+            console.log('Got message: ', message);
+        });
+    </script>
 </body>
+</html>
