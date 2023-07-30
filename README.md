@@ -18,7 +18,7 @@ npm start
 ```
 
 ### Client
-Browse to [http://localhost:8080](http://localhost:8000) in multiple tabs
+Browse to [http://localhost:8080](http://localhost:8080) in multiple tabs
 
 From developer tools,
 
