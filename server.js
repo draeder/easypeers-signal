@@ -11,18 +11,26 @@ const server = http.createServer((req, res) => {
   if (filePath == './')
     filePath = './index.html';
 
+  // Extract the file extension for content-type setting
   let extname = String(path.extname(filePath)).toLowerCase();
   let mimeTypes = {
     '.html': 'text/html',
     '.js': 'text/javascript',
+    // Add other mime types if needed
   };
 
   let contentType = mimeTypes[extname] || 'application/octet-stream';
 
   fs.readFile(filePath, function(error, content) {
     if (error) {
-      res.writeHead(500);
-      res.end('Sorry, there was an error loading the requested file.', 'utf-8');
+      if(error.code == 'ENOENT'){
+        res.writeHead(404);
+        res.end("Resource not found");
+      }
+      else {
+        res.writeHead(500);
+        res.end('Sorry, there was an error loading the requested file.', 'utf-8');
+      }
     } else {
       res.writeHead(200, { 'Content-Type': contentType });
       res.end(content, 'utf-8');
