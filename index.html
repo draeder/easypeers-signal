@@ -6,6 +6,7 @@
         let opts = {
             maxPeers: 6,
             iceConfig: { 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }] },
+            ws: 'ws://localhost:8080',
             // Low-level configuration options
             _GOSSIP_LIFETIME: 60 * 1000,
 

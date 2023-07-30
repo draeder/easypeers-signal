@@ -34,3 +34,16 @@ Send direct messages with:
 ```js
 es.send("<peer address>", "your message")
 ```
+
+#### Javascript
+```js
+import { EasypeersSignal } from "./index.js"
+
+const es = new EasypeersSignal()
+es.on('message', (message) => {
+  console.log('Got message: ', message)
+})
+
+es.send('message')
+es.send('< peer adddress >', message)
+```
