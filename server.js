@@ -6,17 +6,15 @@ const path = require('path');
 let clients = {};
 
 const server = http.createServer((req, res) => {
-  // Determine the file to serve based on the URL
   let filePath = '.' + req.url;
-  if (filePath == './')
+  if (filePath == './') {
     filePath = './index.html';
+  }
 
-  // Extract the file extension for content-type setting
   let extname = String(path.extname(filePath)).toLowerCase();
   let mimeTypes = {
     '.html': 'text/html',
     '.js': 'text/javascript',
-    // Add other mime types if needed
   };
 
   let contentType = mimeTypes[extname] || 'application/octet-stream';
@@ -26,8 +24,7 @@ const server = http.createServer((req, res) => {
       if(error.code == 'ENOENT'){
         res.writeHead(404);
         res.end("Resource not found");
-      }
-      else {
+      } else {
         res.writeHead(500);
         res.end('Sorry, there was an error loading the requested file.', 'utf-8');
       }
@@ -42,6 +39,7 @@ const wss = new WebSocket.Server({ server });
 
 wss.on('connection', ws => {
   let id;
+  let topics = [];
 
   ws.on('message', message => {
     let data;
@@ -55,12 +53,8 @@ wss.on('connection', ws => {
     switch (data.type) {
       case 'hello':
         id = data.id;
-        clients[id] = ws;
-        clients[id].lastHeartbeat = Date.now()
-        console.log(data.reconnected)
-        // if (!data.reconnected) {
-        //   // return
-        // }
+        topics = data.topics || [];
+        clients[id] = {ws: ws, topics: topics, lastHeartbeat: Date.now()};
         ws.send(JSON.stringify({ type: 'server-is-alive' }))
         notifyPeersAboutNewPeer(id);
         break;
@@ -70,7 +64,7 @@ wss.on('connection', ws => {
         forwardMessage(data);
         break;
       case 'heartbeat':
-        clients[id].lastHeartbeat = Date.now()
+        clients[id].lastHeartbeat = Date.now();
         break;
       default:
         console.log("Received unexpected message type: " + data.type);
@@ -85,12 +79,9 @@ wss.on('connection', ws => {
 
 setInterval(() => {
   let now = Date.now();
-
   for (let id in clients) {
-    // If we haven't received a heartbeat in over 10 seconds
     if (now - clients[id].lastHeartbeat > 10000) {
-      // Close the WebSocket and remove the client from the clients map
-      clients[id].close();
+      clients[id].ws.close();
       delete clients[id];
     }
   }
@@ -103,24 +94,29 @@ function notifyPeersAboutNewPeer(id) {
   });
 
   for (let clientId in clients) {
-    // Send message to all clients except for the newly connected client
-    if (clientId !== id) {
-      clients[clientId].send(data);
+    // check if both clients don't have topics or if they share a topic
+    if (clientId !== id && 
+        (!clients[id].topics.length && !clients[clientId].topics.length || 
+        clients[clientId].topics.some(topic => clients[id].topics.includes(topic)))) {
+      clients[clientId].ws.send(data);
     }
   }
 }
 
 function forwardMessage(data) {
   let targetClient = clients[data.targetId];
-  if (targetClient && targetClient.readyState === WebSocket.OPEN) {
+  if (targetClient && targetClient.ws.readyState === WebSocket.OPEN) {
     let messageToForward = {
       type: data.type,
       [data.type]: data[data.type],
       id: data.id,
       targetId: data.targetId
     };
-    console.log('Forwarding message:', messageToForward); // Added log
-    targetClient.send(JSON.stringify(messageToForward));
+    console.log('Forwarding message:', messageToForward);
+    if ((clients[data.id].topics.length === 0 && targetClient.topics.length === 0) ||
+        (clients[data.id].topics.length > 0 && targetClient.topics.includes(data.topic))) {
+      targetClient.ws.send(JSON.stringify(messageToForward));
+    }
   }
 }
 

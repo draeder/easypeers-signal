@@ -16,6 +16,7 @@ export function EasypeersSignal(opts) {
   }
 
   const maxPeers = opts && opts.maxPeers ? opts.maxPeers : 6
+  const fanout = this.fanout = opts && opts.fanout ? opts.fanout : 0.5
   const configuration = opts && opts.iceConfig ? opts.iceConfig
     : { 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }] }
   const _GOSSIP_LIFETIME_MS = opts && opts._GOSSIP_LIFETIME_MS ? opts._GOSSIP_LIFETIME_MS : 60 * 1000
@@ -26,10 +27,20 @@ export function EasypeersSignal(opts) {
   let peerCount = 0
   let seenGossipIds = {}
   
-  async function init() {
-    peerId = await generateRandomSHA1()
-    if (opts && opts.debug) console.debug('Peer ID:', peerId)
-    startWebSocketConnection() 
+  this.peers = () => {
+    return Object.keys(rtcPeerConnections)
+  }
+
+  async function init(str) {
+    if (!str || typeof str !== 'string'){
+      peerId = await generateRandomSHA1()
+      if (opts && opts.debug) console.debug('Peer ID:', peerId)
+    } else {
+      peerId = await sha1(str)
+      if (opts && opts.debug) console.debug('Peer ID:', peerId)
+    }
+    events.emit('init', peerId)
+    startWebSocketConnection()
   }
 
   function setSeenGossip(gossipId) {
@@ -82,12 +93,12 @@ export function EasypeersSignal(opts) {
       setSeenGossip(gossipId)
   
       let excludePeers = []
-      gossipToClosePeers(JSON.stringify(event), gossipId, 1, excludePeers)
+      gossipToClosePeers(JSON.stringify(event), gossipId, fanout, excludePeers)
     } 
     else {
       messageContent = message
       gossipId = await SHA256(messageContent)
-  
+
       event = {
         type: "message",
         from: peerId,
@@ -99,7 +110,7 @@ export function EasypeersSignal(opts) {
       setSeenGossip(gossipId)
   
       let excludePeers = []
-      gossipToClosePeers(JSON.stringify(event), gossipId, 1, excludePeers)
+      gossipToClosePeers(JSON.stringify(event), gossipId, fanout, excludePeers)
     }
   }
 
@@ -137,7 +148,7 @@ export function EasypeersSignal(opts) {
           return
         }
 
-        if (!message.to || message.to === peerId) {
+        if (!message.to || message.to && message.to.includes(peerId)) {
           events.emit('message', message)
         }
         
@@ -236,7 +247,8 @@ export function EasypeersSignal(opts) {
             let data = {
               type: "hello",
               id: peerId,
-              reconnected: reconnectAttempts > 0
+              reconnected: reconnectAttempts > 0,
+              topics: opts && opts.topics ? opts.topics : undefined
             }
             send(data)
             hasHandledServerIsAlive = true
