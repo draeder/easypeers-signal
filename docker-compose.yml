@@ -12,10 +12,7 @@ services:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
       - ./public:/var/www/html
-    depends_on:
-      - certbot
-      - app
-    command: "/bin/bash -c 'while [ ! -f /etc/letsencrypt/live/decentralize.ooo/fullchain.pem ]; do sleep 2; done; nginx -g \"daemon off;\"'"
+    command: "/bin/bash -c 'while [ ! -f /etc/letsencrypt/live/decentralize.ooo/fullchain.pem ]; do echo Waiting for certificates; sleep 5; done; nginx -g \"daemon off;\"'"
 
   app:
     build: .
@@ -30,7 +27,5 @@ services:
     volumes:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot certonly --webroot --email draeder@gmail.com --agree-tos --no-eff-email --manual-public-ip-logging-ok --domain decentralize.ooo --http-01-port=80 --webroot-path=/var/www/certbot --keep-until-expiring; sleep 12h & wait $${!}; done;'"
-    depends_on:
-      - nginx
-
+    entrypoint: "/bin/sh -c 'certbot certonly --webroot --email draeder@gmail.com --agree-tos --no-eff-email --manual-public-ip-logging-ok --domain decentralize.ooo --http-01-port=80 --webroot-path=/var/www/certbot --keep; sleep 1d'"
+    restart: unless-stopped
