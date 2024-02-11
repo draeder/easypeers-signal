@@ -1,35 +1,36 @@
-version: '3'
+version: '3.7'
 
 services:
   nginx:
     image: nginx:latest
     container_name: nginx
     ports:
-      - "80:80"  # Maps port 80 on the host to port 80 in the container
-      - "443:443"  # Maps port 443 on the host to port 443 in the container
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
       - ./public:/var/www/html
     depends_on:
+      - certbot
       - app
+    command: "/bin/bash -c 'while [ ! -f /etc/letsencrypt/live/decentralize.ooo/fullchain.pem ]; do sleep 2; done; nginx -g \"daemon off;\"'"
 
   app:
     build: .
     container_name: nodejs_app
-    ports:
-      - "3000:3000"  # Ensure this line is present to map port 3000 on the host to port 3000 in the container
-    volumes:
-      - .:/app
     environment:
       - NODE_ENV=production
+    volumes:
+      - .:/app
 
   certbot:
     image: certbot/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     volumes:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot certonly --webroot --email draeder@gmail.com --agree-tos --no-eff-email --manual-public-ip-logging-ok --domain decentralize.ooo --http-01-port=80 --webroot-path=/var/www/certbot --keep-until-expiring; sleep 12h & wait $${!}; done;'"
     depends_on:
       - nginx
+
