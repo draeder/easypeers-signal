@@ -8,7 +8,7 @@ NGINX_CONTAINER="nginx"
 
 # Start Nginx and App using initial nginx.conf
 echo "Starting Nginx and App services with initial configuration..."
-docker-compose -f "$PROJECT_DIR/docker-compose.yml" up -d
+docker compose -f "$PROJECT_DIR/docker-compose.yml" up -d
 
 # Wait for Nginx to be fully up and serving the ACME challenge directory
 echo "Waiting for Nginx to be ready..."
