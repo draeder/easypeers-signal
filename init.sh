@@ -9,7 +9,7 @@ APP_CONTAINER="nodejs_app" # Ensure this matches the name in your docker-compose
 
 # Start Nginx and App using initial nginx.conf
 echo "Starting Nginx and App services with initial configuration..."
-docker-compose -f "$PROJECT_DIR/docker-compose.yml" up -d
+docker compose -f "$PROJECT_DIR/docker-compose.yml" up -d
 
 # Wait for Nginx to be fully up and serving the ACME challenge directory
 echo "Waiting for Nginx to be ready..."
