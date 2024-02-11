@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  web:
+  nginx:
     image: nginx:latest
     container_name: nginx
     ports:
@@ -20,7 +20,6 @@ services:
     container_name: nodejs_app
     volumes:
       - .:/app
-    command: node server.js
     environment:
       - NODE_ENV=production
 
@@ -30,3 +29,5 @@ services:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    depends_on:
+      - nginx
