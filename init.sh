@@ -8,7 +8,7 @@ WEBROOT_PATH="/var/www/certbot"
 
 # Step 1: Start up the necessary services with Docker Compose
 echo "Starting Nginx and App services..."
-docker-compose -f "$PROJECT_DIR/docker-compose.yml" up -d nginx app
+docker compose -f "$PROJECT_DIR/docker-compose.yml" up -d nginx app
 
 # Wait a moment to ensure Nginx is ready
 sleep 10
