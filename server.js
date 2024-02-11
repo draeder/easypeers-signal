@@ -49,7 +49,7 @@ wss.on("connection", (ws) => {
     try {
       data = JSON.parse(message);
     } catch (e) {
-      console.log("Invalid JSON");
+      console.log("Invalid JSON", e);
       data = {};
     }
 
@@ -121,7 +121,7 @@ function forwardMessage(data) {
       id: data.id,
       targetId: data.targetId,
     };
-    console.log("Forwarding message:", messageToForward);
+
     if (
       (clients[data.id].topics.length === 0 &&
         targetClient.topics.length === 0) ||
@@ -133,6 +133,6 @@ function forwardMessage(data) {
   }
 }
 
-server.listen(8080, () => {
-  console.log(new Date() + " Server is listening on port 8080");
+server.listen(3000, () => {
+  console.log(new Date() + " Server is listening on port 3000");
 });

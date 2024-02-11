@@ -14,6 +14,13 @@ Clone this repo, then:
 npm install
 ```
 
+## Docker Install
+```
+docker build -t easypeers-signal .
+docker run -p 80:3000 -p 443:3000 easypeers-signal
+```
+
+
 ## Usage
 ### Server
 #### Start the easypeers-signal server
@@ -22,8 +29,12 @@ npm start
 ```
 
 ### Client
-Browse to [http://localhost:8080](http://localhost:8080) in multiple tabs
+Browse to [http://localhost:3000](http://localhost:3000) in multiple tabs
 
+### Docker Client
+Browse to [http://localhost:80](http://localhost:80) in multiple tabs
+
+### API
 From developer tools, send broadcast messages with:
 ```js
 es.send("your message")
