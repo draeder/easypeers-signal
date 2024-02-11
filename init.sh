@@ -22,7 +22,8 @@ docker run -it --rm \
     certbot/certbot certonly --webroot \
     --webroot-path=/var/www/certbot \
     --email "$EMAIL" --agree-tos --no-eff-email \
-    --domain "$DOMAIN"
+    --domain "$DOMAIN" \
+    --staging
 
 # Check if SSL certificates were obtained successfully
 if [ -f "$PROJECT_DIR/data/certbot/conf/live/$DOMAIN/fullchain.pem" ]; then
