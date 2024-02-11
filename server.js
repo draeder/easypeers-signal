@@ -1,70 +1,75 @@
-const http = require('http');
-const WebSocket = require('ws');
-const fs = require('fs');
-const path = require('path');
+const http = require("http");
+const WebSocket = require("ws");
+const fs = require("fs");
+const path = require("path");
 
 let clients = {};
 
 const server = http.createServer((req, res) => {
-  let filePath = '.' + req.url;
-  if (filePath == './') {
-    filePath = './index.html';
+  let filePath = "." + req.url;
+  if (filePath == "./") {
+    filePath = "./index.html";
   }
 
   let extname = String(path.extname(filePath)).toLowerCase();
   let mimeTypes = {
-    '.html': 'text/html',
-    '.js': 'text/javascript',
+    ".html": "text/html",
+    ".js": "text/javascript",
   };
 
-  let contentType = mimeTypes[extname] || 'application/octet-stream';
+  let contentType = mimeTypes[extname] || "application/octet-stream";
 
-  fs.readFile(filePath, function(error, content) {
+  fs.readFile(filePath, function (error, content) {
     if (error) {
-      if(error.code == 'ENOENT'){
+      if (error.code == "ENOENT") {
         res.writeHead(404);
         res.end("Resource not found");
       } else {
         res.writeHead(500);
-        res.end('Sorry, there was an error loading the requested file.', 'utf-8');
+        res.end(
+          "Sorry, there was an error loading the requested file.",
+          "utf-8"
+        );
       }
     } else {
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content, 'utf-8');
+      res.writeHead(200, { "Content-Type": contentType });
+      res.end(content, "utf-8");
     }
   });
 });
 
 const wss = new WebSocket.Server({ server });
 
-wss.on('connection', ws => {
+wss.on("connection", (ws) => {
   let id;
   let topics = [];
 
-  ws.on('message', message => {
+  ws.on("message", (message) => {
     let data;
     try {
       data = JSON.parse(message);
     } catch (e) {
-      console.log('Invalid JSON');
+      console.log("Invalid JSON");
       data = {};
     }
 
     switch (data.type) {
-      case 'hello':
+      case "hello":
         id = data.id;
         topics = data.topics || [];
-        clients[id] = {ws: ws, topics: topics, lastHeartbeat: Date.now()};
-        ws.send(JSON.stringify({ type: 'server-is-alive' }))
+        clients[id] = { ws: ws, topics: topics, lastHeartbeat: Date.now() };
+        ws.send(JSON.stringify({ type: "server-is-alive" }));
         notifyPeersAboutNewPeer(id);
         break;
-      case 'offer':
-      case 'answer':
-      case 'candidate':
+      case "offer":
+      case "answer":
+      case "candidate":
         forwardMessage(data);
         break;
-      case 'heartbeat':
-        clients[id].lastHeartbeat = Date.now();
+      case "heartbeat":
+        clients[id]
+          ? (clients[id].lastHeartbeat = Date.now())
+          : delete clients[id];
         break;
       default:
         console.log("Received unexpected message type: " + data.type);
@@ -72,7 +77,7 @@ wss.on('connection', ws => {
     }
   });
 
-  ws.on('close', () => {
+  ws.on("close", () => {
     delete clients[id];
   });
 });
@@ -89,15 +94,19 @@ setInterval(() => {
 
 function notifyPeersAboutNewPeer(id) {
   let data = JSON.stringify({
-    type: 'new-peer',
-    id: id
+    type: "new-peer",
+    id: id,
   });
 
   for (let clientId in clients) {
     // check if both clients don't have topics or if they share a topic
-    if (clientId !== id && 
-        (!clients[id].topics.length && !clients[clientId].topics.length || 
-        clients[clientId].topics.some(topic => clients[id].topics.includes(topic)))) {
+    if (
+      clientId !== id &&
+      ((!clients[id].topics.length && !clients[clientId].topics.length) ||
+        clients[clientId].topics.some((topic) =>
+          clients[id].topics.includes(topic)
+        ))
+    ) {
       clients[clientId].ws.send(data);
     }
   }
@@ -110,16 +119,20 @@ function forwardMessage(data) {
       type: data.type,
       [data.type]: data[data.type],
       id: data.id,
-      targetId: data.targetId
+      targetId: data.targetId,
     };
-    console.log('Forwarding message:', messageToForward);
-    if ((clients[data.id].topics.length === 0 && targetClient.topics.length === 0) ||
-        (clients[data.id].topics.length > 0 && targetClient.topics.includes(data.topic))) {
+    console.log("Forwarding message:", messageToForward);
+    if (
+      (clients[data.id].topics.length === 0 &&
+        targetClient.topics.length === 0) ||
+      (clients[data.id].topics.length > 0 &&
+        targetClient.topics.includes(data.topic))
+    ) {
       targetClient.ws.send(JSON.stringify(messageToForward));
     }
   }
 }
 
 server.listen(8080, () => {
-  console.log((new Date()) + ' Server is listening on port 8080');
+  console.log(new Date() + " Server is listening on port 8080");
 });
