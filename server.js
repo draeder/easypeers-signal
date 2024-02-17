@@ -5,7 +5,17 @@ const path = require("path");
 
 let clients = {};
 
+if (process.env.NODE_ENV === "production") {
+  console.debug = () => {}; // Override debug logging in production
+}
+
 const server = http.createServer((req, res) => {
+  if (req.url === "/_ah/health") {
+    res.writeHead(200);
+    res.end("OK");
+    return;
+  }
+
   let filePath = "." + req.url;
   if (filePath == "./") {
     filePath = "./index.html";
@@ -133,6 +143,8 @@ function forwardMessage(data) {
   }
 }
 
-server.listen(3000, () => {
-  console.log(new Date() + " Server is listening on port 3000");
+server.listen(process.env.PORT || 3000, () => {
+  console.log(
+    new Date() + " Server is listening on port " + (process.env.PORT || 3000)
+  );
 });

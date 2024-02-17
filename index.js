@@ -16,7 +16,7 @@ export function EasypeersSignal(opts) {
   };
 
   const maxPeers = opts && opts.maxPeers ? opts.maxPeers : 6;
-  const fanout = (this.fanout = opts && opts.fanout ? opts.fanout : 0.5);
+  this.fanout = this.fanout = opts && opts.fanout ? opts.fanout : 0.5;
   const configuration =
     opts && opts.iceConfig
       ? opts.iceConfig
@@ -70,8 +70,8 @@ export function EasypeersSignal(opts) {
     }, {});
 
     let closestPeers = getClosestPeers(peers, relayingPeerId, fraction);
-
     for (let peerId of closestPeers) {
+      console.debug("Gossiping:", message);
       let dataChannel = dataChannels[peerId];
 
       if (dataChannel.readyState === "open") {
@@ -105,7 +105,12 @@ export function EasypeersSignal(opts) {
       setSeenGossip(gossipId);
 
       let excludePeers = [];
-      gossipToClosePeers(JSON.stringify(event), gossipId, fanout, excludePeers);
+      gossipToClosePeers(
+        JSON.stringify(event),
+        gossipId,
+        this.fanout,
+        excludePeers
+      );
     } else {
       messageContent = message;
       gossipId = await SHA256(messageContent);
@@ -121,7 +126,12 @@ export function EasypeersSignal(opts) {
       setSeenGossip(gossipId);
 
       let excludePeers = [];
-      gossipToClosePeers(JSON.stringify(event), gossipId, fanout, excludePeers);
+      gossipToClosePeers(
+        JSON.stringify(event),
+        gossipId,
+        this.fanout,
+        excludePeers
+      );
     }
   };
 
@@ -143,7 +153,7 @@ export function EasypeersSignal(opts) {
 
     rtcPeerConnection.ondatachannel = (event) => {
       dataChannel = event.channel;
-      dataChannel.onopen = (event) => {
+      dataChannel.onopen = () => {
         if (opts && opts.debug)
           console.debug("Data channel is open with " + targetId);
         events.emit("connected", targetId);
@@ -174,7 +184,7 @@ export function EasypeersSignal(opts) {
         gossipToClosePeers(
           JSON.stringify(message),
           message.gossipId,
-          0.33,
+          opts.fanout,
           excludePeers,
           peerId,
           message.from
@@ -189,6 +199,7 @@ export function EasypeersSignal(opts) {
         delete rtcPeerConnections[targetId];
         delete dataChannels[targetId];
         peerCount--;
+        return;
       }
     };
 
@@ -356,6 +367,8 @@ export function EasypeersSignal(opts) {
   }
 
   function send(message) {
+    console.debug(message);
+    if (typeof message === "string") message = JSON.parse(message);
     message.id = peerId;
     ws.send(JSON.stringify(message));
   }
@@ -375,7 +388,7 @@ export function EasypeersSignal(opts) {
         if (opts && opts.debug) console.debug("Setting local description");
       })
       .then(() => {
-        rtcPeerConnections[peerId].setRemoteDescription(
+        rtcPeerConnections[id].setRemoteDescription(
           new RTCSessionDescription(offer)
         );
       })
@@ -395,6 +408,29 @@ export function EasypeersSignal(opts) {
     rtcPeerConnections[id].addIceCandidate(new RTCIceCandidate(candidate));
     if (opts && opts.debug) console.debug("handling ice candidate");
   }
+
+  // Add this function within the scope of your $es function
+  async function checkAndRequestConnection() {
+    if (rtcPeerConnections.length === 0) {
+      console.debug("No active peers. Attempting to reconnect...");
+
+      // Resend the connection request
+      let data = {
+        type: "hello",
+        id: peerId,
+      };
+      send(JSON.stringify(data));
+
+      // Attempt to reconnect WebSocket if it's not open
+      if (ws.readyState !== WebSocket.OPEN) {
+        console.debug("WebSocket is not open. Attempting to reconnect...");
+        startWebSocketConnection();
+      }
+    }
+  }
+
+  // Call this function periodically
+  setInterval(checkAndRequestConnection, 10000); // every 10 seconds
 
   init();
 }
@@ -428,7 +464,7 @@ async function SHA256(message) {
   return hashHex;
 }
 
-const EventEmitter = function (opts) {
+const EventEmitter = function () {
   const eventTarget = new EventTarget();
 
   this.on = (eventName, listener) => {
@@ -473,6 +509,5 @@ function getClosestPeers(peers, relayingPeerId, fraction) {
   if (count === 0 && otherPeerIds.length > 0) {
     count = 1;
   }
-
   return otherPeerIds.slice(0, count);
 }
